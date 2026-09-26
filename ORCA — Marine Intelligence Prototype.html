@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ORCA — Ocean & Marine Conversational Intelligence</title>
+<style>
+  :root{
+    --navy:#0C3B52; --sky:#0C9BD2; --aqua:#48C8D8; --pale:#EEF9FC;
+    --line:#D6EAF0; --muted:#6D8996; --amber:#E7A949; --amberbg:#FFF3DE;
+    --green:#2DAE86; --greenbg:#E2F6EF; --bg:#F3FAFD; --white:#FFFFFF;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    height:100%;margin:0;background:var(--bg);
+    font-family:Inter,-apple-system,'Segoe UI',Arial,sans-serif;
+    color:var(--navy);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px 12px;
+  }
+  .frame{
+    width:100%;max-width:380px;height:820px;max-height:92vh;
+    background:var(--white);border-radius:32px;border:1px solid var(--line);
+    box-shadow:0 20px 50px rgba(12,59,82,0.14);
+    display:flex;flex-direction:column;overflow:hidden;position:relative;
+  }
+  header.app{
+    padding:20px 22px 14px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .name{font-weight:700;font-size:15px;letter-spacing:1.5px;}
+  .brand .tag{font-weight:600;font-size:6px;letter-spacing:1.2px;color:var(--muted);}
+  .demo-pill{
+    display:flex;align-items:center;gap:5px;background:var(--amberbg);
+    border-radius:10px;padding:5px 10px;font-weight:700;font-size:8px;
+    letter-spacing:1px;color:var(--amber);
+  }
+  .demo-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--amber);}
+  main{flex:1;overflow-y:auto;padding:4px 22px 16px;}
+  main::-webkit-scrollbar{width:0;}
+  .eyebrow{font-weight:700;font-size:9px;letter-spacing:1.2px;color:var(--sky);margin:16px 0 6px;}
+  h1.screen{font-weight:700;font-size:19px;margin:0 0 2px;color:var(--navy);}
+  p.sub{font-weight:500;font-size:10px;color:var(--muted);margin:0 0 14px;}
+
+  /* Assistant */
+  .hero h2{font-weight:700;font-size:21px;line-height:1.15;margin:6px 0 2px;color:var(--navy);}
+  .hero h2 span{color:var(--sky);}
+  .hero p{font-weight:500;font-size:10px;color:var(--muted);margin:8px 0 16px;line-height:1.5;}
+  .engine{border:1px solid var(--line);border-radius:17px;padding:14px;margin-bottom:14px;}
+  .engine .label{display:flex;align-items:center;gap:6px;font-weight:700;font-size:7px;letter-spacing:1px;color:var(--sky);margin-bottom:10px;}
+  .engine .label .dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+  .chat-log{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:10px;padding-right:2px;}
+  .msg{border-radius:12px;padding:9px 11px;font-size:9.5px;line-height:1.45;max-width:88%;}
+  .msg.user{align-self:flex-end;background:var(--navy);color:#fff;font-weight:500;}
+  .msg.orca{align-self:flex-start;background:var(--pale);border:1px solid var(--line);color:#17617E;font-weight:500;}
+  .chat-input-row{display:flex;align-items:center;gap:8px;background:var(--pale);border:1px solid var(--line);border-radius:12px;padding:8px 10px;}
+  .chat-input-row input{flex:1;border:none;background:none;outline:none;font-size:9.5px;font-family:inherit;color:var(--navy);}
+  .send-btn{width:26px;height:26px;border-radius:50%;background:var(--sky);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .send-btn svg{width:11px;height:11px;}
+  .send-btn:disabled{opacity:.5;cursor:default;}
+  .cards-row{display:flex;gap:10px;margin-bottom:6px;}
+  .scenario{flex:1;border-radius:16px;padding:13px;cursor:pointer;border:1px solid var(--line);background:#fff;transition:transform .12s;}
+  .scenario:active{transform:scale(.97);}
+  .scenario.dark{background:var(--navy);border-color:var(--navy);}
+  .scenario .ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .scenario.dark .ic{background:#126685;}
+  .scenario:not(.dark) .ic{background:var(--greenbg);}
+  .scenario h3{font-weight:700;font-size:10px;margin:0 0 3px;}
+  .scenario.dark h3{color:#fff;}
+  .scenario:not(.dark) h3{color:var(--navy);}
+  .scenario p{font-weight:500;font-size:7px;margin:0;line-height:1.4;}
+  .scenario.dark p{color:#BDEAF5;}
+  .scenario:not(.dark) p{color:var(--muted);}
+  .suggest{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-top:8px;cursor:pointer;background:#fff;}
+  .suggest span{font-weight:500;font-size:9px;color:#17617E;}
+  .suggest small{color:var(--muted);font-weight:700;}
+
+  /* generic stat cards for other screens */
+  .stat-row{display:flex;gap:10px;margin-bottom:12px;}
+  .stat{flex:1;background:var(--pale);border:1px solid var(--line);border-radius:12px;padding:11px;}
+  .stat b{display:block;font-size:15px;color:var(--navy);}
+  .stat span{font-size:7.5px;color:var(--muted);font-weight:500;}
+  .panel{border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:12px;background:#fff;}
+  .panel h4{margin:0 0 3px;font-size:11px;color:var(--navy);}
+  .panel .muted{font-size:7.5px;color:var(--muted);}
+  .badge{display:inline-block;font-weight:700;font-size:6.5px;padding:3px 8px;border-radius:8px;}
+  .badge.amber{background:var(--amberbg);color:var(--amber);}
+  .badge.sky{background:var(--pale);color:var(--sky);}
+  .badge.green{background:var(--greenbg);color:var(--green);}
+  .barbg{height:6px;border-radius:3px;background:var(--pale);}
+  .barfg{height:6px;border-radius:3px;}
+
+  /* nav */
+  nav.tabs{
+    display:flex;border-top:1px solid var(--line);flex-shrink:0;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));
+  }
+  nav.tabs button{
+    flex:1;background:none;border:none;display:flex;flex-direction:column;
+    align-items:center;gap:3px;padding:6px 2px;cursor:pointer;color:var(--muted);
+    font-family:inherit;
+  }
+  nav.tabs button svg{width:17px;height:17px;stroke:var(--muted);fill:none;stroke-width:1.7;}
+  nav.tabs button span{font-size:7.5px;font-weight:600;}
+  nav.tabs button.active{color:var(--sky);}
+  nav.tabs button.active svg{stroke:var(--sky);}
+
+  @media (max-width:400px){ body{padding:0;} .frame{max-height:100vh;height:100vh;border-radius:0;border:none;} }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="app">
+    <div class="brand">
+      <div class="name">ORCA</div>
+      <div class="tag">MARINE INTELLIGENCE</div>
+    </div>
+    <div class="demo-pill"><span class="dot"></span>DEMO</div>
+  </header>
+
+  <main id="main"></main>
+
+  <nav class="tabs">
+    <button data-screen="assistant"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/></svg><span>Assistant</span></button>
+    <button data-screen="map"><svg viewBox="0 0 24 24"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/></svg><span>Map</span></button>
+    <button data-screen="analytics"><svg viewBox="0 0 24 24"><path d="M4 19V9M12 19V4M20 19v-6"/></svg><span>Analytics</span></button>
+    <button data-screen="alerts"><svg viewBox="0 0 24 24"><path d="M12 3a5 5 0 00-5 5v3l-2 4h14l-2-4V8a5 5 0 00-5-5zM9.5 19a2.5 2.5 0 005 0"/></svg><span>Alerts</span></button>
+    <button data-screen="feedback"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"/><circle cx="9" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="15" cy="11" r="1"/></svg><span>Feedback</span></button>
+  </nav>
+</div>
+
+<script>
+const $main = document.getElementById('main');
+let sample = null;
+let chatHistory = []; // {role, content}
+
+const screens = {
+  assistant: renderAssistant,
+  map: renderMap,
+  analytics: renderAnalytics,
+  alerts: renderAlerts,
+  feedback: renderFeedback
+};
+
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>go(btn.dataset.screen));
+});
+
+function go(name){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name));
+  screens[name]();
+}
+
+function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ---------- ASSISTANT (working agent) ---------- */
+function renderAssistant(){
+  $main.innerHTML = `
+    <div class="hero">
+      <h2>Ask the ocean.<br><span>Understand the sea.</span></h2>
+      <p>Conversational marine intelligence for clearer decisions on the water.</p>
+      <div class="engine">
+        <div class="label"><span class="dot"></span>ORCA INTELLIGENCE ENGINE</div>
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input-row">
+          <input id="chatInput" placeholder="Ask about conditions, hazards or fishing zones..." />
+          <button class="send-btn" id="sendBtn" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="eyebrow" style="margin-top:2px;">TRY A DEMO</div>
+      <div class="cards-row">
+        <div class="scenario dark" data-q="Rank the best fishing zones near the Konkan coast right now.">
+          <div class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M3 12l18-9-9 18-2-7-7-2z"/></svg></div>
+          <h3>Nearest PFZ</h3>
+          <p>Rank the best fishing zones near you</p>
+        </div>
+        <div class="scenario" data-q="Assess marine safety for tomorrow morning near Mumbai.">
+          <div class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2DAE86" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h3>Marine safety</h3>
+          <p>Assess tomorrow morning near Mumbai</p>
+        </div>
+      </div>
+      <div class="eyebrow">SUGGESTED QUESTIONS</div>
+      <div class="suggest" data-q="Show current sea conditions along the Arabian Sea coast."><span>✦  Show current sea conditions</span><small>→</small></div>
+      <div class="suggest" data-q="Show marine hazards near Mumbai right now."><span>✦  Show marine hazards near Mumbai</span><small>→</small></div>
+    </div>
+  `;
+  renderChatLog();
+  document.getElementById('sendBtn').addEventListener('click', sendChat);
+  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+  document.querySelectorAll('.scenario, .suggest').forEach(el=>{
+    el.addEventListener('click', ()=>{ document.getElementById('chatInput').value = el.dataset.q; sendChat(); });
+  });
+}
+
+function renderChatLog(){
+  const log = document.getElementById('chatLog');
+  if(!log) return;
+  if(chatHistory.length===0){
+    log.innerHTML = `<div class="msg orca">Hi, I'm ORCA. Ask me about sea conditions, hazards, or where the fishing zones look best today.</div>`;
+    return;
+  }
+  log.innerHTML = chatHistory.map(m=>`<div class="msg ${m.role==='user'?'user':'orca'}">${esc(m.content)}</div>`).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+async function ensureSample(){
+  if(sample) return sample;
+  try{
+    sample = await window.claude.use('sample');
+  }catch(e){ sample = null; }
+  return sample;
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  chatHistory.push({role:'user', content:text});
+  renderChatLog();
+
+  const log = document.getElementById('chatLog');
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'msg orca';
+  thinkingEl.textContent = 'Thinking...';
+  log.appendChild(thinkingEl);
+  log.scrollTop = log.scrollHeight;
+
+  const s = await ensureSample();
+  if(!s){
+    thinkingEl.textContent = "I can't reach the intelligence engine in this preview. In the full app, this would call live oceanographic data (SST, wave height, chlorophyll, PFZ models) to answer.";
+    chatHistory.push({role:'assistant', content: thinkingEl.textContent});
+    return;
+  }
+  try{
+    const sys = "You are ORCA, a marine conversational intelligence assistant for fishermen and coastal operators in India (demo context: Arabian Sea, Konkan coast, Mumbai). Answer questions about sea conditions, wave height, sea surface temperature, potential fishing zones (PFZ), chlorophyll, and marine hazards. This is a DEMO with no live sensor feed, so give plausible, clearly-labeled illustrative figures and always note it's demo data, not a live reading. Keep answers under 60 words, practical and direct, no markdown.";
+    const messages = [...chatHistory.slice(0,-1).map(m=>({role:m.role==='user'?'user':'assistant', content:m.content})), {role:'user', content:text}];
+    const res = await s([{role:'user', content: sys + "\n\nConversation so far, respond to the latest user message:\n" + JSON.stringify(messages)}], {
+      onText: ({text})=>{ thinkingEl.textContent = text; log.scrollTop = log.scrollHeight; },
+      modelTier: 'quick'
+    });
+    const finalText = res.text || thinkingEl.textContent;
+    thinkingEl.textContent = finalText;
+    chatHistory.push({role:'assistant', content: finalText});
+  }catch(err){
+    thinkingEl.textContent = "The engine hit an error answering that — try rephrasing, or ask about conditions, hazards, or fishing zones.";
+    chatHistory.push({role:'assistant', content: thinkingEl.textContent});
+  }
+}
+
+/* ---------- MAP ---------- */
+function renderMap(){
+  $main.innerHTML = `
+    <div class="eyebrow" style="margin-top:8px;">SELECTED ZONE</div>
+    <h1 class="screen">Marine map</h1>
+    <p class="sub">Arabian Sea · Demo geospatial view</p>
+    <div style="border:1px solid var(--line);border-radius:18px;background:#D9F1F7;height:160px;margin-bottom:14px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:10px;left:10px;background:#fff;border-radius:10px;padding:4px 9px;font-size:8px;font-weight:600;color:#17617E;">⌾ Mumbai coast</div>
+      <div style="position:absolute;top:10px;right:10px;background:#fff;border-radius:10px;padding:4px 9px;font-size:10px;font-weight:700;color:#17617E;">+ −</div>
+      <div style="position:absolute;bottom:32px;left:70px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--green);"></div>
+      <div style="position:absolute;bottom:60px;left:120px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--sky);"></div>
+      <div style="position:absolute;bottom:20px;left:160px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--amber);"></div>
+      <div style="position:absolute;bottom:8px;left:10px;right:10px;background:#fff;border-radius:9px;padding:6px 10px;font-size:7px;color:var(--muted);">● You &nbsp; ● PFZ &nbsp; ● Risk</div>
+    </div>
+    <div class="panel">
+      <span class="badge green" style="margin-bottom:8px;display:inline-block;">LOW RISK</span>
+      <h4>Ratnagiri shelf</h4>
+      <p class="muted">18 km from selected location</p>
+      <div class="stat-row" style="margin-top:10px;">
+        <div class="stat"><b>92%</b><span>Suitability</span></div>
+        <div class="stat"><b>28.4°C</b><span>SST</span></div>
+        <div class="stat"><b style="color:var(--green)">High</b><span>Chlorophyll</span></div>
+      </div>
+      <div style="background:var(--pale);border-radius:9px;padding:8px 10px;font-size:8px;color:#17617E;font-weight:500;">✦ High chlorophyll + suitable SST</div>
+    </div>
+  `;
+}
+
+/* ---------- ANALYTICS ---------- */
+function renderAnalytics(){
+  $main.innerHTML = `
+    <div class="eyebrow" style="margin-top:8px;">CURRENT SNAPSHOT</div>
+    <h1 class="screen">Ocean analytics</h1>
+    <p class="sub">Signals from the selected marine window</p>
+    <div class="stat-row">
+      <div class="stat"><b>28.4°C</b><span>Sea surface temp</span></div>
+      <div class="stat"><b>1.4 m</b><span>Wave height</span></div>
+    </div>
+    <div class="panel">
+      <h4>Sea surface temperature</h4>
+      <p class="muted" style="margin-bottom:8px;">°C · last 24 hours</p>
+      <svg viewBox="0 0 200 60" width="100%" height="60"><path d="M6 41 29 32l23 5 23-21 23 10 23-14 22 4" stroke="#0C9BD2" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="panel">
+      <h4>Wave height forecast</h4>
+      <p class="muted" style="margin-bottom:8px;">meters · forecast window</p>
+      <svg viewBox="0 0 200 60" width="100%" height="60"><path d="M6 49 29 41l23 5 23-10 23 8 23-7 22 5" stroke="#48C8D8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  `;
+}
+
+/* ---------- ALERTS ---------- */
+function renderAlerts(){
+  $main.innerHTML = `
+    <h1 class="screen">Marine alerts</h1>
+    <p class="sub">Active hazards and operational watches</p>
+    <div style="background:var(--navy);border-radius:17px;padding:14px;margin-bottom:14px;color:#fff;">
+      <div style="font-size:7px;font-weight:700;letter-spacing:1px;color:#BDEAF5;margin-bottom:4px;">CURRENT STATUS</div>
+      <div style="font-size:11px;font-weight:700;margin-bottom:4px;">1 active alert near your route</div>
+      <div style="font-size:8px;color:#BDEAF5;">Moderate wave corridor in the Arabian Sea.</div>
+    </div>
+    <div class="eyebrow">MONITORING FEED</div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><h4>High wave alert</h4><p class="muted">Arabian Sea · outer corridor</p></div>
+        <span class="badge amber">ACTIVE</span>
+      </div>
+      <div style="border-top:1px solid var(--line);margin:10px 0;"></div>
+      <div style="display:flex;gap:24px;margin-bottom:8px;">
+        <div><div class="muted" style="font-weight:700;">SEVERITY</div><div style="color:var(--amber);font-weight:600;font-size:9px;">Moderate</div></div>
+        <div><div class="muted" style="font-weight:700;">START TIME</div><div style="font-weight:600;font-size:9px;">08:20 today</div></div>
+      </div>
+      <div style="background:var(--pale);border-radius:9px;padding:7px 10px;font-size:8px;color:#17617E;">⌾ Small vessels should avoid corridor</div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><h4>Strong wind watch</h4><p class="muted">Konkan coast · north</p></div>
+        <span class="badge sky">WATCH</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- FEEDBACK ---------- */
+function renderFeedback(){
+  $main.innerHTML = `
+    <h1 class="screen">Feedback loop</h1>
+    <p class="sub">Improve every marine insight</p>
+    <div style="background:var(--pale);border:1px solid #BDEAF5;border-radius:17px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">A learning system, not just a chatbot.</div>
+      <div style="font-size:8px;color:var(--muted);margin-top:4px;">Every rating helps ORCA improve.</div>
+    </div>
+    <div class="eyebrow">MONITORING DASHBOARD</div>
+    <div class="stat-row">
+      <div class="stat"><b>12</b><span>Total queries</span></div>
+      <div class="stat"><b>94%</b><span>Successful responses</span></div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h4 style="margin:0;">Response quality</h4><span class="badge green">HEALTHY</span>
+      </div>
+      ${bar('Successful','94%','var(--green)')}
+      ${bar('Helpful','78%','var(--sky)')}
+      ${bar('Data coverage','89%','var(--aqua)')}
+      <div style="border-top:1px solid var(--line);margin:10px 0 8px;"></div>
+      <div style="display:flex;justify-content:space-between;font-size:8px;">
+        <span class="muted">Most common failure</span><span style="font-weight:600;">Outdated data</span>
+      </div>
+    </div>
+  `;
+}
+function bar(label, pct, color){
+  return `<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:8px;margin-bottom:4px;"><span class="muted">${label}</span><span style="font-weight:700;">${pct}</span></div><div class="barbg"><div class="barfg" style="width:${pct};background:${color};"></div></div></div>`;
+}
+
+go('assistant');
+</script>
+</body>
+</html>
